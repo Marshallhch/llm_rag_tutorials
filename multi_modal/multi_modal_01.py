@@ -84,6 +84,71 @@ text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
 joined_texts = "\n".join(texts)
 texts_2k_token = text_splitter.split_text(joined_texts)
 
-print(f"분할된 텍스트 개수: {len(texts_2k_token)}")
-print(f"원본 텍스트 요소 개수: {len(texts)}")
-print(f"테이블 요소 개수: {len(tables)}")
+# print(f"분할된 텍스트 개수: {len(texts_2k_token)}")
+# print(f"원본 텍스트 요소 개수: {len(texts)}")
+# print(f"테이블 요소 개수: {len(tables)}")
+
+# 다중 벡터 검색기
+# 텍스트, 표, 이미지 등의 다양한 데이터를 요약하여 인덱싱하고, 원본 데이터를 검색하는 데 사용하는 기술이다.
+# 이미지와 같은 멀티모달 데이터를 포함하여 정보 검색을 효율적으로 처리할 수 있으며
+# 생성된 요약본은 데이터를 빠르게 검색할 수 있도록 최적화 한다.
+
+# 텍스트 및 표 요약
+# 텍스트 및 표 요약은 GPT-4 또는 Llama 3.1 모델을 통해 생성된다.
+# 특히 큰 텍스트 블록을 사용하는 경우에는 텍스트 요약이 매우 중요하다.
+# 요약된 텍스트와 표 데이터는 검색에 최적화되며, 이를 통해 원본 데이터를 빠르고 정확하게 검색할 수 있다.
+
+import os
+from dotenv import load_dotenv
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+
+# 텍스트 및 표 요약 함수
+def generate_text_summaries(texts, tables, summarize_texts=False):
+  """
+  텍스트 및 표 데이터를 요약하여 검색에 활용할 수 있는 요약본 생성
+  Args:
+    texts: 텍스트 데이터
+    tables: 표 데이터
+    summary_texts: 텍스트 요약 여부
+  Returns:
+    text_summaries: 텍스트 요약 여부
+    tables_summaries: 표 요약 여부
+  """
+  # Prompt 한국어 버전
+  prompt_text_kor = """당신은 표와 텍스트를 요약하여 검색에 활용할 수 있도록 돕는 도우미입니다. \n 
+  이 요약본들은 임베딩되어 원본 텍스트나 표 요소를 검색하는 데 사용될 것입니다. \n 
+  주어진 표나 텍스트의 내용을 검색에 최적화된 간결한 요약으로 작성해 주세요. 요약할 표 또는 텍스트: {element}"""
+
+  prompt = ChatPromptTemplate.from_template(prompt_text_kor)
+
+  # 모델 생성
+  model = ChatOpenAI(model='gpt-4o-mini', temperature=0)
+  summarize_chain = {'element': lambda x: x} | prompt | model | StrOutputParser()
+
+  text_summaries = []
+  tables_summaries = []
+
+  # 텍스트 요약을 활성화 하는 경우
+  # max_concurrency: 동시 요약 처리 수 - 병렬 처리의 최대 개수
+  if texts and summarize_texts:
+    text_summaries = summarize_chain.batch(texts, {'max_concurrency': 5})
+  # 텍스트를 요약하지 않는 경우
+  elif texts:
+    text_summaries = texts
+
+  # 테이블 요약
+  if tables:
+    tables_summaries = summarize_chain.batch(texts, {'max_concurrency': 5})
+
+  return text_summaries, tables_summaries
+
+text_summaries, table_summaries = generate_text_summaries(texts_2k_token, tables, summarize_texts=True)
+
+print(text_summaries)
+print("=" * 50)
+print(table_summaries)
