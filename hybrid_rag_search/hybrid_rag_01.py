@@ -77,5 +77,30 @@ query = "에코프로에 대해 알려줘"
 docs = ensemble_retriever.invoke(query)
 
 # print(docs)
-for doc in docs:
-  print(doc.page_content)
+# for doc in docs:
+#   print(doc.page_content)
+
+# 프롬프트 생성
+template = """
+다음 맥락을 바탕으로 질문에 답변해 주세요:
+{context}
+질문: {question}
+"""
+
+prompt = ChatPromptTemplate.from_template(template)
+llm = ChatOpenAI(model_name='gpt-4o-mini', temperature=0)
+
+# 전처리
+def format_docs(docs):
+  formatted = "\n\n".join(doc.page_content for doc in docs)
+  return formatted
+
+final_rag_chain = (
+  {'context': ensemble_retriever, 'question': RunnablePassthrough()}
+  | prompt
+  | llm
+  | StrOutputParser()
+)
+
+# 답변 출력
+print(final_rag_chain.invoke(query))
