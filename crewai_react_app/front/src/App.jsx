@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import InputGroup from './components/InputGroup';
 import { useState } from 'react';
 import LoadingSpinner from './components/LoadingSpinner';
+import axios from 'axios';
+import ResultDisplay from './components/ResultDisplay';
 
 const AppContainer = styled.div`
   padding: 40px 20px;
@@ -52,11 +54,23 @@ function App() {
         topic: topic,
       });
       setResult(response.data);
+      console.log(response.data);
     } catch (error) {
       setError(error.response ? error.response.data.error : error.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDownload = () => {
+    const element = document.createElement('a');
+    // https://teveloper.tistory.com/6
+    const file = new Blob([result.raw], { type: 'text/plain' });
+
+    element.href = URL.createObjectURL(file);
+    element.download = 'raw_data.txt';
+    document.body.appendChild(element);
+    element.click();
   };
 
   return (
@@ -76,6 +90,7 @@ function App() {
             fetchData={fetchData}
           />
           {error && <Error>{error}</Error>}
+          <ResultDisplay result={result} handleDownload={handleDownload} />
         </>
       )}
     </AppContainer>

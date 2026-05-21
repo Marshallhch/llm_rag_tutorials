@@ -2010,6 +2010,7 @@ dependencies = [
     { name = "streamlit" },
     { name = "unstructured", extra = ["all-docs"] },
     { name = "unstructured-inference" },
+    { name = "uvicorn" },
     { name = "wikipedia" },
 ]
 
@@ -2035,6 +2036,7 @@ requires-dist = [
     { name = "streamlit", specifier = ">=1.57.0" },
     { name = "unstructured", extras = ["all-docs"], specifier = ">=0.22.29" },
     { name = "unstructured-inference", specifier = ">=1.6.11" },
+    { name = "uvicorn", specifier = ">=0.47.0" },
     { name = "wikipedia", specifier = ">=1.4.0" },
 ]
 
